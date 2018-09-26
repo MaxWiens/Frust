@@ -2,12 +2,28 @@ extern crate amethyst;
 mod frog; 
 use amethyst::prelude::*;
 use amethyst::input::{is_close_requested, is_key_down}; 
-use amethyst::renderer::{DisplayConfig, DrawFlat, Event, Pipeline, PosNormTex,
+use amethyst::renderer::{Camera, PngFormat, SpriteHandle, DisplayConfig, DrawFlat, Event, Pipeline, PosNormTex,
                          RenderBundle, Stage, VirtualKeyCode};
 
 struct GameState;
 
 impl<'a, 'b> State<GameData<'a, 'b>> for GameState {
+    
+    fn on_start(&mut self, data: StateData<GameData>) {
+        let StateData { world, ..} = data;
+        let spritesheet : SpriteHandle = {
+            let loader = world.read_resource::<Loader>();
+            let texture_storage = world.read_resource::<AssetStorage<Texture>>();
+            loader.load(
+                "texture/spritesheet.png",
+                PngFormat,
+                Default::default(),
+                (),
+                &texture_storage
+            )
+        };
+    }
+
     fn handle_event(&mut self, _: StateData<GameData>, event: Event) -> Trans<GameData<'a, 'b>> {
         if is_close_requested(&event) || is_key_down(&event, VirtualKeyCode::Escape) {
             Trans::Quit
