@@ -1,9 +1,10 @@
 extern crate amethyst;
 use amethyst::prelude::*;
+use amethyst::core::transform::TransformBundle;
 use amethyst::assets::{AssetStorage, Loader};
 use amethyst::input::{is_close_requested, is_key_down}; 
 use amethyst::renderer::{Texture, Camera, PngFormat, DisplayConfig, DrawFlat, Event, Pipeline, PosNormTex,
-                         RenderBundle, Stage, VirtualKeyCode};
+                         RenderBundle, Stage, VirtualKeyCode, SpriteSheetHandle, MaterialTextureSet, SpriteSheet};
 
 mod frog;
 
@@ -15,19 +16,10 @@ impl<'a, 'b> State<GameData<'a, 'b>> for GameState {
     fn on_start(&mut self, data: StateData<GameData>) {
         let StateData { world, ..} = data;
         
-        let spritesheet = {
-            let loader = world.read_resource::<Loader>();
-            let texture_storage = world.read_resource::<AssetStorage<Texture>>();
-            loader.load(
-                "texture/spritesheet.png",
-                PngFormat,
-                Default::default(),
-                (),
-                &texture_storage
-            )
-        };
+        let sprite_sheet_handle = load_sprite_sheet(world);
+
         println!("\n\nokherewego");
-        frog::initialise_frog(world, spritesheet);
+        frog::initialise_frog(world, sprite_sheet_handle);
         
     }
 
@@ -63,10 +55,46 @@ fn main() -> Result<(), amethyst::Error> {
             .with_pass(DrawFlat::<PosNormTex>::new()),
     );
 
-    let game_data = GameDataBuilder::default()
-        .with_bundle(RenderBundle::new(pipe, Some(config)))?;
+    /*let game_data = GameDataBuilder::default()
+        .with_bundle(RenderBundle::new(pipe, Some(config)))?;*/
     let mut game = Application::build("./", GameState)?
-        .build(game_data)?;
+        //.with_bundle(TransformBundle::new())?
+        .with_bundle(RenderBundle::new(pipe, Some(config)))?
+        .build()?;
     game.run();
     Ok(())
+}
+
+
+fn load_sprite_sheet(world: &mut World) -> SpriteSheetHandle {
+
+    // Reference to texture
+    let texture_handle = {
+        let loader = world.read_resource::<Loader>();
+        let texture_storage = world.read_resource::<AssetStorage<Texture>>();
+        loader.load(
+            "texture/spritesheet.png",
+            PngFormat,
+            Default::default(),
+            (),
+            &texture_storage,
+        )
+    };
+
+    let texture_id = 0;
+    let mut material_texture_set = world.write_resource::<MaterialTextureSet>();
+    material_texture_set.insert(texture_id, texture_handle);
+
+    let sprite_sheet = SpriteSheet{
+        texture_id,
+        sprites: vec![frog::SPRITE]
+    };
+
+    let sprite_sheet_handle = {
+        let loader = world.read_resource::<Loader>();
+        let sprite_sheet_store = world.read_resource::<AssetStorage<SpriteSheet>>();
+        loader.load_from_data(sprite_sheet, (), &sprite_sheet_store)
+    };
+
+    sprite_sheet_handle
 }
