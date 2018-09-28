@@ -3,7 +3,7 @@ use amethyst::prelude::*;
 use amethyst::core::transform::TransformBundle;
 use amethyst::assets::{AssetStorage, Loader};
 use amethyst::input::{is_close_requested, is_key_down}; 
-use amethyst::renderer::{Texture, Camera, PngFormat, DisplayConfig, DrawFlat, Event, Pipeline, PosNormTex,
+use amethyst::renderer::{Texture, Camera, PngFormat, DisplayConfig, DrawFlat, Event, Pipeline, PosTex,
                          RenderBundle, Stage, VirtualKeyCode, SpriteSheetHandle, MaterialTextureSet, SpriteSheet};
 
 mod frog;
@@ -14,7 +14,7 @@ struct GameState;
 impl<'a, 'b> State<GameData<'a, 'b>> for GameState {
     
     fn on_start(&mut self, data: StateData<GameData>) {
-        let StateData { world, ..} = data;
+        let world = data.world;
         
         let sprite_sheet_handle = load_sprite_sheet(world);
 
@@ -41,26 +41,25 @@ impl<'a, 'b> State<GameData<'a, 'b>> for GameState {
 
 fn main() -> Result<(), amethyst::Error> {
     amethyst::start_logger(Default::default());
-
     let path = format!(
         "{}/resources/display_config.ron",
         env!("CARGO_MANIFEST_DIR")
     );
     
+    let dir = env!("CARGO_MANIFEST_DIR");
     let config = DisplayConfig::load(&path);
 
+    /*
     let pipe = Pipeline::build().with_stage(
         Stage::with_backbuffer()
             .clear_target([0.00196, 0.23726, 0.21765, 1.0], 1.0)
             .with_pass(DrawFlat::<PosNormTex>::new()),
     );
-
-    /*let game_data = GameDataBuilder::default()
-        .with_bundle(RenderBundle::new(pipe, Some(config)))?;*/
-    let mut game = Application::build("./", GameState)?
-        //.with_bundle(TransformBundle::new())?
-        .with_bundle(RenderBundle::new(pipe, Some(config)))?
-        .build()?;
+    */
+    let game_data = GameDataBuilder::default()
+        .with_basic_renderer(path, DrawFlat::<PosTex>::new(), true)?;
+    let mut game = Application::build(dir, GameState)?
+        .build(game_data)?;
     game.run();
     Ok(())
 }
